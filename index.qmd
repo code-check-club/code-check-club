@@ -34,6 +34,13 @@ This document will record our pilot of a code check club. The first step is to i
 ## Examples
 
 ```{r, results='asis'}
+readLines("examples/DeBruine_2002/README.md") |> 
+  gsub(pattern = "^#", replacement = "###") |>
+  paste(collapse = "\n") |>
+  cat()
+```
+
+```{r, results='asis'}
 readLines("examples/Docherty_2020/README.md") |> 
   gsub(pattern = "^#", replacement = "###") |>
   paste(collapse = "\n") |>

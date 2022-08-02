@@ -1,0 +1,138 @@
+---
+title: "Facial Resemblance Enhances Trust"
+author: "Lisa DeBruine"
+date: "13/01/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+```
+
+## Kinship and Trust
+
+### Read in the raw data
+
+```{r}
+dat_raw <- read_csv("data/trust_game.txt", 
+                    col_names = c("id", "date", "time",
+                                  sprintf("game_%0.2i", 1:16)),
+                    na = "error", # SF04 game_11 had a recording error
+                    col_types = cols()
+                    )
+```
+
+### Game attributes
+
+"In the experiment, 24 subjects played 16 rounds of this bar- gaining game in sessions with one to four players at individual computer stations. Subjects played with what were ostensibly 16 different playing partners on-line at other universities, but in fact played against programmed choices associated with displayed facial morphs. The subjects’ choices were scored as trusting or not trusting when playing P1 (six rounds), and unselfish or selfish when playing P2 (six rounds). In the remaining four rounds, subjects were assigned the P2 role, but P1 was programmed to make a non-trusting move and terminate the game; these rounds generated no choice data, but were included to provide realism. Orthogonal to the above distinctions was the resemblance cue, with half of the rounds played against self morphs and half against non-self morphs. Thus, each subject could make 0, 1, 2 or 3 prosocial decisions in each of four conditions: trusting self morphs and non-self morphs as P1, and responding unselfishly to trusting self morphs and non-self morphs as P2." (DeBruine, 2002, p. 1309)
+
+```{r}
+games <- tibble(
+  game = sprintf("game_%0.2i", 1:16),
+  # subjects play as player 1 or 2
+  player = c(2,2,1,1,2,2,1,2,1,2,1,2,2,2,2,1),
+  # the image was a self morph for this counterbalance group
+  self_cb = c("B", NA, "B", "A", "A", NA, "B", NA,
+           "B", "A", "A", NA, "B", "B", "A", "A")
+)
+```
+
+### Join and Recode Data
+
+Trusting and reciprocating moves were scored 1 and non-trusting or non-reciprocating moves scored 0. Filler games were removed.
+
+```{r}
+dat_long <- dat_raw %>%
+  # add counterbalance group
+  mutate(counterb = as.numeric(substr(id, 3, 4)),
+         counterb = ifelse(counterb < 7, "A", "B"),
+         sex = substr(id, 2, 2)) %>%
+  gather(game, decision, game_01:game_16) %>%
+  mutate(decision = recode(decision, "YY" = 1, "WZ" = 0, "XX" = 0)) %>%
+  left_join(games, by = "game") %>%
+  filter(!is.na(self_cb)) %>%
+  mutate(self = ifelse(self_cb == counterb, "self", "other"))
+
+```
+
+Scores are the sum total number of trusting or reciprocating moves towards self or other morphs. 
+
+N.B.  SF04 had a recording error for game 11 (trust_self). This game was coded as 0 (not trusting), biasing the result against the prediction. This decision was not explicitly disclosed in the manuscript.
+
+```{r}
+kin <- dat_long %>%
+  group_by(id, sex, player, self) %>%
+  summarise(score = sum(decision, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(player = recode(player, "1" = "trust", "2" = "recip")) %>%
+  unite(type, player, self) %>%
+  spread(type, score) %>%
+  mutate(exp = "kin") %>%
+  select(id, sex, exp, trust_self, trust_other, recip_self, recip_other)
+```
+
+```{r eval = FALSE}
+# save processed data
+kin %>%
+  select(trust_self, trust_other, recip_self, recip_other) %>%
+  write_csv("data/kin.csv")
+```
+
+### Analysis
+
+#### Trusting Moves
+
+```{r}
+t.test(kin$trust_self, kin$trust_other, paired = TRUE, conf.level = .975)
+```
+
+#### Reciprocating Moves
+
+```{r}
+t.test(kin$recip_self, kin$recip_other, paired = TRUE, conf.level = .975)
+```
+
+## Control Studies
+
+```{r}
+dat_control <- read_csv("data/famous_control.txt", 
+                    col_names = c("id", "date", "time",
+                                  sprintf("game_%0.2i", 1:16)),
+                    na = "error",
+                    col_types = cols()
+                    )
+```
+
+```{r}
+dat_long_c <- dat_control %>%
+  filter(substr(id, 1, 1) != "x") %>% # exclude 
+  separate(id, c("exp", "id"), fill = "left") %>%
+  mutate(exp = recode(exp, "C" = "control", .missing = "famous")) %>%
+  arrange(exp, id) %>%
+  # add counterbalance group
+  mutate(counterb = as.numeric(substr(id, 3, 4)),
+         counterb = ifelse(counterb < 7, "A", "B"),
+         sex = substr(id, 2, 2)) %>%
+  
+  gather(game, decision, game_01:game_16) %>%
+  mutate(decision = recode(decision, "YY" = 1, "WZ" = 0, "XX" = 0)) %>%
+  left_join(games, by = "game") %>%
+  filter(!is.na(self_cb)) %>%
+  mutate(self = ifelse(self_cb == counterb, "self", "other"))
+```
+
+```{r}
+dat_all <- dat_long_c %>%
+  group_by(id, sex, exp, player, self) %>%
+  summarise(score = sum(decision, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(player = recode(player, "1" = "trust", "2" = "recip")) %>%
+  unite(type, player, self) %>%
+  spread(type, score) %>%
+  select(id, sex, exp, trust_self, trust_other, recip_self, recip_other) %>%
+  bind_rows(kin)
+```
+
+
+
+
