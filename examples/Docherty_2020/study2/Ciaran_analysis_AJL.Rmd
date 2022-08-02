@@ -1,0 +1,326 @@
+---
+title: "PV2003 Replication - Study 2"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)   # for data wrangling and viz
+library(lme4)        # for linear mixed effects models (lmer)
+library(lmerTest)    # for p-values from lmer
+library(broom.mixed) # for getting tidy stats from lmer
+```
+
+```{r}
+#Easy standardisation function
+z <- function(x,remove.outliers = FALSE,winsorise = FALSE){
+	out <- (x - mean(x,na.rm = TRUE))/sd(x,na.rm = TRUE)
+	if (remove.outliers == TRUE){
+	  out <- ifelse(out >3,NA,ifelse(out < -3,NA,out))
+	}
+	if (winsorise == TRUE){
+	  out <- ifelse(out > 3,3,ifelse(out < -3,-3,out))
+	}
+	return(out)
+}
+
+#Easy descriptive statistics function
+descriptives <- function(data,variables){
+	output <- data.frame("variable"=variables,"N"=NA,"min"=NA,"max"=NA,"mean"=NA,"sd"=NA)
+	d <- as.data.frame(data[variables])
+	for (v in 1:NROW(variables)){
+		output[v,"N"] <- sum(!is.na(d[v]))
+		output[v,"min"] <- min(d[,v],na.rm=TRUE)
+		output[v,"max"] <- max(d[,v],na.rm=TRUE)
+		output[v,"mean"] <- mean(d[,v],na.rm=TRUE)
+		output[v,"sd"] <- sd(d[,v],na.rm=TRUE)
+	}
+	print(output)
+	return(data)
+}
+```
+
+## Data processing
+
+```{r}
+# load original data
+dat_orig <- read_csv(
+  "Women's SRA and fem_pref Ciaran MSc.csv",
+  col_types = cols() # can override default guess of column types here
+)
+```
+
+
+Face preference scores (DV) recoded from 0 to 7 to -3.5 to 3.5:
+
+* 0.5 to 3.5: masculinised face rated 
+    * ‘slightly more attractive’ (4 = 0.5), 
+    * ‘somewhat more attractive’ (3 = 1.5), 
+    * ‘more attractive’ (6 = 2.5) or 
+    * ‘much more attractive’ (7 = 3.5) than masculinized face.
+
+* -0.5 to -3.5: feminised face rated 
+    * ‘slightly more attractive’ (3 = -0.5), 
+    *‘somewhat more attractive’ (2 = -1.5), 
+    *‘more attractive’ (1 = -2.5) or 
+    * ‘much more attractive’ (0 = -3.5) than feminized face.
+
+Predictors:
+
+* Women’s SRA (centred on mean for sample)
+* Sex of face (effect coded as male=0.5 and female=-0.5)
+
+```{r}
+dat <- dat_orig %>%
+  mutate(
+    sub_id = row_number(), # create subject IDs
+    sra.c = z(sra) # grand-mean center sra
+  ) %>% 
+  gather(face_id, score, female1:male40) %>% # make data long
+  mutate(
+    # effect-code face sex
+    face_sex = gsub("\\d", "", face_id),
+    face_sex.e = recode(face_sex, "female" = -0.5, "male" = 0.5),
+    # center femininity preference score
+    score.c = (score - 3.5) * -1
+  )
+```
+
+## Descriptive plots
+
+Sense check for the recoding. 
+
+```{r}
+
+ggplot(dat, aes(score.c, fill = face_sex)) +
+  geom_bar(color = "black", alpha = 0.5, show.legend = FALSE) +
+  facet_grid(face_sex~.) +
+  xlab("Masculine Preference Score")
+
+```
+
+
+```{r}
+group_by(dat, sub_id, sra.c) %>%
+  summarise() %>%
+  ggplot(aes(sra.c)) + 
+  geom_bar(color="black", fill = "purple", alpha = 0.5) +
+  xlab("SRA (centered)")
+```
+
+
+
+## Main Analysis
+
+All data and analysis code can be found on the OSF (XXX). Preference scores were analyzed using linear mixed effects models using the lme4 (Bates et al., 2015) and lmerTest (Kuznetsova et al., 2015) packages in R statistical software (R Core Team, 2013). The model included fixed effects for sex of face and self-rated attractiveness, as well as their interaction. Sex of face was effect coded (male = 0.5, female = -0.5) and self-rated attractiveness was centred on the mean for the sample. Random intercepts were specified for both participants and stimuli and random slopes were specified maximally (Barr et al., 2013; Barr, 2013).
+
+```{r,eval = FALSE}
+a <- lmer(score.c ~ face_sex.e * sra.c + 
+            (1 + face_sex.e | sub_id) + 
+            (1 + sra.c | face_id), 
+          data = dat)
+save(a,file = "a.Rdata")
+```
+```{r}
+load("a.Rdata")
+summary(a)
+```
+
+
+```{r, results='asis', echo = FALSE,eval = FALSE}
+tidy(a, effect = "fixed", conf.int = TRUE) %>%
+  select(term, estimate, conf.low, conf.high, se = std.error, 
+         t = statistic, df, p = p.value) %>%
+  mutate_if(is.numeric, signif, 3) %>%
+  unite(`95% CI`, conf.low, conf.high, sep = ", ") %>%
+  knitr::kable(digits = 3)
+```
+
+```{r,echo = FALSE,eval = FALSE}
+#Format results to match Study 1.
+
+format_lmer <- function(.model,file,variable = NA, label = NA,reorder = NA){
+	s <- suppressWarnings(summary(.model))
+	fixed <- s$coefficients
+	random <- s$varcor
+	fixed <- cbind(format(round(fixed[,1:3],digits = 2),nsmall = 2),format(round(fixed[,4],2),nsmall = 2),format(round(fixed[,5],3),nsmall = 2))
+
+colnames(fixed) <- colnames(s$coefficients)
+	
+	sig <- function(x){
+		o <- ""
+		if(x < .05){o <- "*"}
+		if(x < .01){o <- "**"}
+		if(x < .001){o <- "***"}
+		out <- paste(x,o,sep="")
+	}
+	
+	fixed[,5] <- unlist(lapply(as.list(fixed[,5]),sig))
+	
+	dec <- function(x){
+		temp <- substr(trimws(x),1,2)
+		if(temp == "-0"){x <- gsub("-0."," -.",x)}
+		if(temp == "0."){x <- gsub("0\\."," .",x)}
+		if(grepl("000",x)){x <- "<.001***"}
+		x
+	}
+	
+	fixed[,1] <- unlist(lapply(as.list(fixed[,1]),dec))
+	fixed[,2] <- unlist(lapply(as.list(fixed[,2]),dec))
+	fixed[,3] <- unlist(lapply(as.list(fixed[,3]),dec))
+	fixed[,4] <- unlist(lapply(as.list(fixed[,4]),dec))
+	fixed[,5] <- unlist(lapply(as.list(fixed[,5]),dec))
+	
+	fixed[,1] <- paste(trimws(fixed[,1])," (",trimws(fixed[,2]),")",sep="")
+	fixed[,4] <- paste(trimws(fixed[,4])," (",trimws(fixed[,3]),")",sep="")
+	fixed <- fixed[,c(1,4,5)]
+		
+	fixed_names <- c("Estimate (Std Error)","t-value (approx df.)","p-value")
+	colnames(fixed) <- fixed_names
+	
+	#output <- rbind(c("FIXED EFFECTS","",""),fixed_names,fixed)
+	output <- fixed
+	row_names <- rownames(fixed)
+	
+	rn <- function(x){
+		x <- gsub(":"," * ",x)
+		x <- gsub("\\(Intercept\\)","Intercept",x)
+		suppressWarnings(if (!is.na(label)){
+			for (v in 1:NROW(variable)){
+				x <- gsub(variable[v],label[v],x)
+			}
+		})
+		x
+	}
+
+	row_names <- rn(row_names)
+	rownames(output) <- c(row_names)
+	
+	if (!anyNA(reorder)){
+		output <- output[reorder,]
+	}
+	
+	write.csv(output,file)
+	
+	return(output)
+	#Reorder Traits
+	#UNFINISHED - RANDOM EFFECTS
+}
+
+format_lmer(a,"PV2003_results_study2.csv",variable = c("face_sex.e","sra.c"),label = c("Face Sex","Self-Rated Attractiveness"))
+```
+
+
+```{r, echo = FALSE}
+
+# function to return formatted stats for fixed effects
+
+fxf <- function(a, theTerm = "(Intercept)") {
+  s <- broom.mixed::tidy(a, effects = "fixed", conf.int = TRUE) %>%
+    filter(term == theTerm)
+  
+  # handle p < .001
+  p <- ifelse(s$p.value < .001, 
+              "< .001",
+              sprintf("= %.3f", round(s$p.value, 3)))
+  
+  # edit the text below to change the output
+  # e.g., %.2f is replaced by a number up to the second decimal place
+  # you also have to round the number, otherwise 0.239 renders as 0.23
+  sprintf("estimate = %.2f, 
+          s.e. = %.2f, 
+          95%% CI = [%.2f, %.2f], 
+          t(%.1f) = %.2f, 
+          p %s",
+          round(s$estimate, 2),
+          round(s$std.error, 2),
+          round(s$conf.low, 2),
+          round(s$conf.high, 2),
+          round(s$df, 1),
+          round(s$statistic, 2),
+          p
+  )
+}
+
+```
+
+```{r}
+dat %>%
+  group_by(sub_id, sra, face_sex) %>%
+  summarise(mean_score = mean(score.c)) %>%
+  ungroup() %>%
+  group_by(face_sex, sra) %>%
+  summarise(mean = mean(mean_score), 
+            se = sd(mean_score)/sqrt(n())) %>%
+  ggplot(aes(sra, mean, color = face_sex)) +
+  geom_smooth(method = lm) +
+  geom_pointrange(aes(ymin = mean - se, ymax = mean + se)) +
+  xlab("Self-Rated Attractiveness") +
+  ylab("Mean Preference for Masculinity (± S.E.)") +
+  guides(colour = guide_legend(title = "Face Sex")) +
+  theme_classic()
+
+ggsave("Figure2.png")
+```
+
+
+```{r,echo = FALSE,eval = FALSE}
+dat %>%
+  group_by(sub_id, sra, face_sex) %>%
+  summarise(mean_score = mean(score.c)) %>%
+  ggplot(aes(as.factor(sra), mean_score, color = face_sex)) +
+  geom_boxplot() +
+  xlab("SRA") +
+  ylab("Mean masculinity preference")
+
+```
+
+### Post-hoc analyses (male)
+
+```{r}
+a_male <- lmer(score.c ~ sra.c + 
+            (1 | sub_id) + 
+            (1 + sra.c | face_id), 
+          data = filter(dat, face_sex == "male"))
+
+summary(a_male)
+```
+
+```{r, results='asis', echo = FALSE,eval = FALSE}
+tidy(a_male, effect = "fixed", conf.int = TRUE) %>%
+  select(term, estimate, conf.low, conf.high, se = std.error, 
+         t = statistic, df, p = p.value) %>%
+  mutate_if(is.numeric, signif, 3) %>%
+  unite(`95% CI`, conf.low, conf.high, sep = ", ") %>%
+  knitr::kable(digits = 3)
+```
+
+### Post-hoc analyses (female)
+
+```{r}
+a_female <- lmer(score.c ~ sra.c + 
+            (1 | sub_id) + 
+            (1 + sra.c | face_id), 
+          data = filter(dat, face_sex == "female"))
+
+summary(a_female)
+```
+
+```{r, results='asis', echo = FALSE,eval = FALSE}
+tidy(a_female, effect = "fixed", conf.int = TRUE) %>%
+  select(term, estimate, conf.low, conf.high, se = std.error, 
+         t = statistic, df, p = p.value) %>%
+  mutate_if(is.numeric, signif, 3) %>%
+  unite(`95% CI`, conf.low, conf.high, sep = ", ") %>%
+  knitr::kable(digits = 3)
+```
+
+
+The negative main effect of face sex (`r fxf(a, "face_sex.e")`) meant that femininity preferences were weaker for male faces than for female faces. 
+There was no significant main effect of SRA (`r fxf(a, "sra.c")`). 
+The interaction between SRA and face sex (`r fxf(a, "face_sex.e:sra.c")`) meant that femininity preferences increased with increasing SRA for female faces (`r fxf(a_female, "sra.c")`), but decreased with increasing SRA for male faces (`r fxf(a_male, "sra.c")`).
+
+```{r,echo = FALSE,eval = FALSE}
+format_lmer(a_male,"PV2003_results_study2_malefaces.csv",variable = c("sra.c"),label = c("Self-Rated Attractiveness"))
+
+format_lmer(a_female,"PV2003_results_study2_femalefaces.csv",variable = c("sra.c"),label = c("Self-Rated Attractiveness"))
+```

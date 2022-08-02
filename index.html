@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<meta name="generator" content="quarto-0.9.80">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>Code Check Club</title>
+<style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+  </style>
+<script src="index_files/libs/clipboard/clipboard.min.js"></script><script src="index_files/libs/quarto-html/quarto.js"></script><script src="index_files/libs/quarto-html/popper.min.js"></script><script src="index_files/libs/quarto-html/tippy.umd.min.js"></script><script src="index_files/libs/quarto-html/anchor.min.js"></script><link href="index_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="index_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet">
+<script src="index_files/libs/bootstrap/bootstrap.min.js"></script><link href="index_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="index_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet">
+<!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc"><h2 id="toc-title">Table of contents</h2>
+<ul>
+<li>
+<a href="#examples" class="nav-link active" data-scroll-target="#examples">Examples</a>
+<ul class="collapse">
+<li><a href="#docherty_2020" class="nav-link" data-scroll-target="#docherty_2020">Docherty_2020</a></li>
+</ul>
+</li>
+</ul></nav>
+</div>
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title"><h1 class="title display-7">Code Check Club</h1></div></header><p><img src="images/code-check-club.png" style="width:300px; max-width:33%; float:right;"></p>
+<p>This document will record our pilot of a code check club. The first step is to identify some possible code to be checked. Ideally for the first few, this will be:</p>
+<ul>
+<li>in a language most of the members know</li>
+<li>straightforward analyses</li>
+<li>not too long</li>
+<li>the coder or a person very familiar with the code will attend</li>
+</ul>
+<section id="examples" class="level2"><h2 class="anchored" data-anchor-id="examples">Examples</h2>
+<section id="docherty_2020" class="level3"><h3 class="anchored" data-anchor-id="docherty_2020">Docherty_2020</h3>
+<p>Docherty C, Lee A, Hahn AC, DeBruine LM &amp; Jones BC (2020). Do more attractive women show stronger preferences for male facial masculinity? Evolution and Human Behavior, 41(4): 312-317. doi: <a href="https://doi.org/10.1016/J.EVOLHUMBEHAV.2020.05.005">10.1016/J.EVOLHUMBEHAV.2020.05.005</a></p>
+<section id="abstract" class="level4"><h4 class="anchored" data-anchor-id="abstract">Abstract</h4>
+<p>Researchers have suggested that more attractive women will show stronger preferences for masculine men because such women are better placed to offset the potential costs of choosing a masculine mate. However, evidence for correlations between measures of women’s own attractiveness and preferences for masculine men is mixed. Moreover, the samples used to test this hypothesis are typically relatively small. Consequently, we conducted two large-scale studies that investigated possible associations between women’s preferences for facial masculinity and their own attractiveness as assessed from third-party ratings of their facial attractiveness (Study 1, N = 454, laboratory study) and self-rated attractiveness (Study 2, N = 8972, online study). Own attractiveness was positively correlated with preferences for masculine men in Study 2 (self-rated attractiveness), but not Study 1 (third-party ratings of facial attractiveness). This pattern of results is consistent with the proposal that women’s beliefs about their own attractiveness, rather than their physical condition per se, underpins attractiveness-contingent masculinity preferences.</p>
+</section><section id="datacode" class="level4"><h4 class="anchored" data-anchor-id="datacode">Data/Code</h4>
+<p>Data/code: <a href="https://osf.io/36fs5/" class="uri">https://osf.io/36fs5/</a><br>
+Coding language: R<br>
+Analysis type: mixed effects models<br>
+Contact: <a href="mailto:debruine@gmail.com?subject=Code%20Check%20Club:%20Docherty_2020">Lisa DeBruine</a></p>
+<p>Study 1 files:</p>
+<ul>
+<li>PV2003-Replication-06.01.20.pdf<br>
+</li>
+<li>PV2003 Replication 06.01.20.Rmd<br>
+</li>
+<li>OCMATE_facepref_ANON.csv<br>
+</li>
+<li>OCMATE_attr_ANON.csv</li>
+</ul>
+<p>Study 2 files:</p>
+<ul>
+<li>Women’s SRA and fem_pref Ciaran MSc.csv</li>
+<li>Ciaran_analysis_AJL.Rmd</li>
+<li>Ciaran_analysis_AJL.pdf</li>
+</ul></section></section></section></main><!-- /main column --><script type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    setTimeout(function() {
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      let href = ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+</body></html>

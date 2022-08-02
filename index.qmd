@@ -1,0 +1,43 @@
+---
+title: "Code Check Club"
+format: 
+  html:
+    toc: true
+    code-link: true
+    code-fold: true
+    code-line-numbers: true
+    code-overflow: wrap
+    code-copy: true
+---
+
+<img src="images/code-check-club.png" style="width:300px; max-width:33%; float:right;">
+
+
+```{r setup, include = FALSE}
+# default knitr options
+knitr::opts_chunk$set(
+  echo       = FALSE,
+  warning    = FALSE,
+  message    = FALSE,
+  digits = 3
+)
+```
+
+This document will record our pilot of a code check club. The first step is to identify some possible code to be checked. Ideally for the first few, this will be:
+
+- in a language most of the members know
+- straightforward analyses
+- not too long
+- the coder or a person very familiar with the code will attend
+
+
+## Examples
+
+```{r, results='asis'}
+readLines("examples/Docherty_2020/README.md") |> 
+  gsub(pattern = "^#", replacement = "###") |>
+  paste(collapse = "\n") |>
+  cat()
+```
+
+
